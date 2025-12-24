@@ -1,0 +1,162 @@
+---
+title: "Project 1 - STA4164"
+author: "Makayla McKenzie"
+date: "2025-10-22"
+output: word_document
+---
+# Step 1 & 2: Load the dataset. Print the dataset. (Limit your print to include only the first ten observations).
+```{r}
+Grad_Admission <- read.csv("~/Downloads/Grad_Admission.csv")
+head(Grad_Admission, 10)
+New_Grad_Data <- subset(Grad_Admission, select = -ID)
+head(New_Grad_Data, 10)
+```
+
+# Step 3:Print a table of the min/1st quartile/median/mean/3rd quartile/max of three of the variables (your choice).
+```{r}
+summary(New_Grad_Data[, c("GRE", "CGPA", "Chance")])
+```
+# Step 4:Make histograms for “Chance”, “CGPA”, “GRE” and “TOEFL” variables and comment on their distribution.
+```{r}
+hist(New_Grad_Data$Chance, main = "Histogram of Chance", xlab = "Chance of Admission", col = "pink", border = "black")
+hist(New_Grad_Data$CGPA, main = "Histogram of CGPA", xlab = "Undergraduate GPA", col = "pink", border = "black")
+hist(New_Grad_Data$GRE, main = "Histogram of GRE", xlab = "GRE Score", col = "pink", border = "black")
+hist(New_Grad_Data$TOEFL, main = "Histogram of TOEFL", xlab = "TOEFL Score", col = "pink", border = "black")
+```
+Looking at the variables I believe Chance seems a bit skewed to the right indicating most of the students have a high chance of admission. Whereas CGPA, GRE, and TOEFL seem pretty evenly distributed through out the histogram. Other information we can find from histograms is if the data is skewed, it can also show if there are any outliers and helps when wanting to compare data from other sets.
+
+# Step 5: Consider “Chance” as the response variable and print scatter plots of each of the other six variables against it.
+```{r}
+predictor <- c("GRE","TOEFL","Urate","SOP","LOR","CGPA")
+
+par(mfrow = c(2,3))
+for (var in predictor) {
+  plot(New_Grad_Data[[var]], New_Grad_Data$Chance,
+       xlab = var, ylab = "Chance", main = paste("Chance vs", var), pch = 19)
+  abline(lm(Chance ~ New_Grad_Data[[var]], data = New_Grad_Data), lwd = 2)
+}
+par(mfrow = c(1,1))
+```
+
+# Step 6: Draw your initial conclusions about the relationship between independent variables and the response variable based on the scatterplot.
+GRE, TOEFL, and CGPA seems to have a more positive linear relationship with Chance. Whereas, Urate, SOP, and LOR doesn't really have a consistent shape, its definitely more weaker and scattered making it less predictive.
+
+# Step 7: Confirm the validity of five major linear regression assumptions and comment on them.
+```{r}
+regmodel <- lm(Chance ~ GRE + TOEFL + Urate + SOP + LOR + CGPA,
+             data = New_Grad_Data)
+
+par(mfrow = c(2, 2))
+plot(regmodel)
+par(mfrow = c(1, 1))
+
+```
+I would say that for residual vs fitted and scale location the plots shows they are both evenly distributed which leads me to infer that its fairly constant. For q-q residual it shows a positive diagonal which tells me the residuals are normal. Lastly, for residuals vs leverage the data points do seem clustered a bit to the left and there are some stray points but they dont stray too far from the bounds so I wouldn't really consider them to be outliers. Furthermore, I do think the models confirm the validity of the five major linear regression assumptions.
+
+# Step 8: Choose the best three independent variables based on your immediate insight into the relationship and list them. 
+```{r}
+top3 <- lm(Chance ~ GRE + CGPA + TOEFL, data = New_Grad_Data)
+summary(top3)
+```
+The three variables that show the strongest relationship with Chance include GRE, CGPA, and TOEFL. The fitted model is Chance = −158.5046+0.2259(GRE)+36.6037(CGPA)+0.3118(TOEFL).
+
+# Step 9:Build up a table, including the correlation between all independent variables and the response variable. What can you deduce from these correlation coefficients? 
+```{r}
+fullmat <- cor(New_Grad_Data)
+fullmat
+```
+What I can deduce from the correlation coefficients is that CGPA, TOEFL, and GRE all have strong relationships that are positive with Chance. Which indicates that the probability of chance of admission will also be higher. The relation between correlation coefficients and the slope of regression equation stems from the fact that if the correlation coefficient is high corresponds to a positive and larger slope thus illustrating a stronger linear bond between the independent and response variable.
+
+# Step 10: Report the result of hypothesis testing for the correlation coefficient of each independent variable.
+```{r}
+
+variables <- names(New_Grad_Data)[1:6]  
+for (v in variables) {
+  result <- cor.test(New_Grad_Data[[v]], New_Grad_Data$Chance)
+  cat("\nVariable:", v, "\n")
+  print(result)
+}  
+```
+The report of the hypothesis indicated that the p vals for the six variables are less than 0.05 therefore proving that we can reject the hypothesis for each variable. Indicating that the independent variables have a strong correlation with chance.
+
+# Step 11:Build straight-line (univariate) regression models for all six independent variables. Test the null hypothesis that each of the β𝐀′s is equal to zero.
+```{r}
+variables <- names(New_Grad_Data)[1:6] 
+for (v in variables) {
+  cat("\nModel for:", v, "\n")
+  model <- lm(Chance ~ New_Grad_Data[[v]], data = New_Grad_Data)
+  print(summary(model))
+}
+```
+Similarly to step 10 we will reject the null hypothesis because the independent variables p value are less than 0.05.
+
+# Step 12: Report the ANOVA table for two variables with the highest R-square value? What conclusion is achievable looking at these tables? (hint: compare R-squares between variables and make suitable conclusion)
+```{r}
+GRE_M <- lm(Chance ~ GRE, data = New_Grad_Data)
+CGPA_M <- lm(Chance ~ CGPA, data = New_Grad_Data)
+
+cat("\nANOVA for GRE:\n")
+print(anova(GRE_M))
+
+cat("\nANOVA for CGPA:\n")
+print(anova(CGPA_M))
+
+cat("\nR-squared values:\n")
+cat("GRE:", summary(GRE_M)$r.squared, "\n")
+cat("CGPA:", summary(CGPA_M)$r.squared, "\n")
+```
+The conclusion that is achievable from looking at these tables is that GRE and CGPA are both strong predictors when it comes to chance of admission. However, CGPA R^2 value is greater than GRE. Which tells us that CGPA is essentially a stronger indication than GRE when it comes to chance of admission.
+
+# Step 13: Build up a model, including all six variables available in the dataset. Are all coefficients significant at 𝐀 = 0.05?
+```{r}
+regmodel <- lm(Chance ~ GRE + TOEFL + Urate + SOP + LOR + CGPA, data = New_Grad_Data)
+
+summary(regmodel)
+```
+All coefficients are not significant at 0.05 level. Urate and SOP are not significant so they will not contribute to the model and we are able to remove them.
+
+# Step 14: Remove all non-significant variables from the model and rebuild the model. What has been changed considerably in the ANOVA table compared to the model in task 13?
+```{r}
+rebuilt <- lm(Chance ~ GRE + TOEFL + LOR + CGPA, data = New_Grad_Data)
+
+cat("\nComparison between full and rebuilt models:\n")
+anova(regmodel, rebuilt)
+
+cat("\nRebuilt Model:\n")
+summary(rebuilt)
+```
+The thing that has been changed considerably in the ANOVA table compared to the model in task 13 is that the difference between the full and rebuilt model without the insignificant variables are not that different. Which further proves the point that taking out the insignificant variables from the model make the model more efficiant while displaying similar results.
+
+# Step 15: Build up confidence bands and prediction bands for all records. Print the appropriate table into your output.
+```{r}
+confidence_int <- predict(
+  rebuilt,
+  newdata = New_Grad_Data,
+  interval = "confidence"
+)
+confidence_res <- cbind(New_Grad_Data[, c("GRE", "TOEFL", "LOR", "CGPA", "Chance")], confidence_int)
+write.csv(confidence_res, "Confidence_Intervals.csv", row.names = FALSE)
+
+prediction_int <- predict(
+  rebuilt,
+  newdata = New_Grad_Data,
+  interval = "prediction"
+)
+prediction_results <- cbind(New_Grad_Data[, c("GRE", "TOEFL", "LOR", "CGPA", "Chance")], prediction_int)
+write.csv(prediction_results, "Prediction_Intervals.csv", row.names = FALSE)
+
+```
+The table illustrates both confidence and prediction bands for each interval. Both the confidence and prediction are helpful in determining the reliability of the regression model. In this case the confidence interval is measuring for accuracy and the prediction is taking into account the individual.
+
+# Step 16: Write the appropriate equation to predict the admission chance with variables included in your final model from task 14. Explain the meaning of intercept and slope in this equation.
+```{r}
+coef(rebuilt)
+```
+The final regression equation is Chance = -146.25 + 0.23(GRE) + 0.29(TOEFL) + 2.40(LOR) + 30.74(CGPA). The meaning of the intercept here represents an approximated chance of admission when GRE, TOEFL, LOR, and CGPA are equal to 0. The meaning of the slope here represents basically how much the chance of admission changes for a specific predictor.
+
+# Step 17:What conclusion can you arrive at from this exploration in terms of the suitability of descriptive statistics and regression in data exploration? What is the recommendation that you would provide future data explorations to include as a result necessarily?
+In conclusion I believe that descriptive statistics is very beneficial as it provides us with an insight on how variables and data in a set behave. For example, in looking at the histogram it helped visualize if the distribution of certain variables were skewed to the right or left. In terms of regression, I also believe that it proves to be useful in sustainability. To elaborate a bit further I think some of the linear models showed strong positive relationships for certain variables which proved to be significant. A recommendation that I would provide future data exploations to include as a result would probably be starting with the descriptive analysis before diving into regression because the former helps recognize the patterns and then the latter helps to essentially test or measure those patterns. It's better practice to actually understand the data fully before going in to model it. 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
